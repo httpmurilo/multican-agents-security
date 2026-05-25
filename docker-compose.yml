@@ -1,0 +1,95 @@
+services:
+  semgrep:
+    image: semgrep/semgrep:latest
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    command:
+      - scan
+      - --config
+      - /workspace/config/semgrep.yml
+      - --json
+      - --output
+      - /workspace/reports/raw/semgrep.json
+      - /workspace
+
+  osv:
+    image: ghcr.io/google/osv-scanner:latest
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    command:
+      - scan
+      - source
+      - --recursive
+      - --format
+      - json
+      - --output
+      - /workspace/reports/raw/osv.json
+      - /workspace
+
+  dependency-check:
+    image: owasp/dependency-check:latest
+    working_dir: /src
+    volumes:
+      - ./:/src
+      - dependency-check-data:/usr/share/dependency-check/data
+    command:
+      - --project
+      - legacy-system
+      - --scan
+      - /src
+      - --format
+      - JSON
+      - --format
+      - HTML
+      - --out
+      - /src/reports/raw/dependency-check
+
+  trivy:
+    image: aquasec/trivy:latest
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+      - trivy-cache:/root/.cache/trivy
+    command:
+      - fs
+      - /workspace
+      - --scanners
+      - vuln,secret,misconfig
+      - --format
+      - json
+      - --output
+      - /workspace/reports/raw/trivy.json
+
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    working_dir: /zap/wrk
+    volumes:
+      - ./reports/raw/zap:/zap/wrk
+      - ./config:/zap/config:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - zap-baseline.py
+      - -t
+      - ${TARGET_URL:-http://host.docker.internal:8080}
+      - -c
+      - /zap/config/zap-baseline.conf
+      - -r
+      - zap-report.html
+      - -J
+      - zap-report.json
+
+  reporter:
+    image: python:3.12-alpine
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    command:
+      - python
+      - /workspace/scripts/generate-report.py
+
+volumes:
+  dependency-check-data:
+  trivy-cache:

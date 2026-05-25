@@ -1,0 +1,33 @@
+﻿prioridades:
+  P0:
+    descricao: "Crítico"
+    exemplos:
+      - "Remote Code Execution"
+      - "SQL Injection explorável"
+      - "Credencial real exposta"
+      - "Bypass de autenticação"
+      - "Acesso indevido a dados sensíveis"
+
+  P1:
+    descricao: "Alto"
+    exemplos:
+      - "XSS com impacto real"
+      - "Path Traversal"
+      - "Upload inseguro"
+      - "Dependência crítica usada diretamente"
+      - "Falha de autorização"
+
+  P2:
+    descricao: "Médio"
+    exemplos:
+      - "Header de segurança ausente"
+      - "Cookie sem SameSite"
+      - "Versão de framework exposta"
+      - "Dependência vulnerável transitiva"
+
+  P3:
+    descricao: "Baixo"
+    exemplos:
+      - "Melhorias de hardening"
+      - "Boas práticas"
+      - "Risco teórico sem evidência"

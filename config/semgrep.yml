@@ -1,0 +1,9 @@
+﻿rules:
+  - id: insecure-eval
+    languages: [python, javascript, typescript]
+    message: Avoid dynamic eval in legacy code.
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: eval(...)
+          - pattern: exec(...)

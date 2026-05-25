@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: multica
+      POSTGRES_USER: multica
+      POSTGRES_PASSWORD: ${MULTICA_POSTGRES_PASSWORD:-multica}
+    volumes:
+      - multica-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U multica -d multica"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: ghcr.io/multica-ai/multica-backend:${MULTICA_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://multica:${MULTICA_POSTGRES_PASSWORD:-multica}@postgres:5432/multica?sslmode=disable
+      PORT: 8080
+      JWT_SECRET: ${MULTICA_JWT_SECRET:-multica-dev-secret-change-me}
+      APP_ENV: ${MULTICA_APP_ENV:-development}
+      FRONTEND_ORIGIN: ${MULTICA_FRONTEND_ORIGIN:-http://localhost:3000}
+      LOCAL_UPLOAD_DIR: /app/data/uploads
+      LOCAL_UPLOAD_BASE_URL: ${MULTICA_LOCAL_UPLOAD_BASE_URL:-http://localhost:8080}
+      MULTICA_DEV_VERIFICATION_CODE: ${MULTICA_DEV_VERIFICATION_CODE:-888888}
+      RESEND_FROM_EMAIL: ${MULTICA_RESEND_FROM_EMAIL:-noreply@multica.local}
+      RESEND_API_KEY: ${MULTICA_RESEND_API_KEY:-}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - multica-uploads:/app/data/uploads
+
+  frontend:
+    image: ghcr.io/multica-ai/multica-web:${MULTICA_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  multica-postgres-data:
+  multica-uploads:
